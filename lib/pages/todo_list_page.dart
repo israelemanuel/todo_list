@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:todo_list/models/task.dart';
 import 'package:todo_list/widgets/tasks_list_item.dart';
 
 class TodoListPage extends StatefulWidget {
-  TodoListPage({Key? key}) : super(key: key);
+  const TodoListPage({Key? key}) : super(key: key);
 
   @override
   State<TodoListPage> createState() => _TodoListPageState();
 }
 
 class _TodoListPageState extends State<TodoListPage> {
-  List<String> tasks = [];
+  List<Task> tasks = [];
+  Task? deletedTask;
+  int? deletedTaskPos;
 
   final TextEditingController todoController = TextEditingController();
 
@@ -35,13 +38,18 @@ class _TodoListPageState extends State<TodoListPage> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: () {
                         String text = todoController.text;
                         setState(() {
-                          tasks.add(text);
+                          Task newTask = Task(
+                            title: text,
+                            date: DateTime.now(),
+                          );
+                          tasks.add(newTask);
                         });
+                        todoController.clear();
                       },
                       style: ElevatedButton.styleFrom(
                         //primary: Colors.cyan,
@@ -57,32 +65,66 @@ class _TodoListPageState extends State<TodoListPage> {
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Flexible(
                   child: ListView(
                     shrinkWrap: true,
                     children: [
-                      for (String task in tasks)
+                      for (Task task in tasks)
                         TodoListItem(
-                          title: task,
+                          task: task,
+                          onDelete: onDelete,
                         ),
                     ],
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: const Text("Voê possui 0 tarefas pendentes"),
+                      child:
+                          Text("Voê possui ${tasks.length} tarefas pendentes"),
                     ),
-                    SizedBox(width: 8),
-                    ElevatedButton(onPressed: () {}, child: Text("Limpar Tudo"))
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                        onPressed: () {}, child: const Text("Limpar Tudo"))
                   ],
                 )
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void onDelete(Task task) {
+    deletedTask = task;
+    deletedTaskPos = tasks.indexOf(task);
+
+    setState(() {
+      tasks.remove(task);
+    });
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Tarefa ${task.title} foi removida com sucesso!',
+          style: const TextStyle(
+            color: Colors.black,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        action: SnackBarAction(
+          label: 'Desfazer',
+          textColor: const Color(0xff00d7f3),
+          onPressed: () {
+            setState(() {
+              tasks.insert(deletedTaskPos!, deletedTask!);
+            });
+          },
+        ),
+        duration: const Duration(seconds: 5),
       ),
     );
   }
